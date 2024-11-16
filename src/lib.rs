@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{future::Future, sync::Arc};
 
 use tokio::{
     sync::Semaphore,
@@ -18,7 +18,7 @@ impl<T: Send + 'static> TaskPool<T> {
         }
     }
 
-    pub async fn spawn(&mut self, task: impl std::future::Future<Output = T> + Send + 'static) {
+    pub async fn spawn(&mut self, task: impl Future<Output = T> + Send + 'static) {
         let permit = self.semaphore.clone().acquire_owned().await.unwrap();
         self.join_set.spawn(async move {
             let result = task.await;
