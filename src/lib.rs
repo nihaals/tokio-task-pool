@@ -18,6 +18,18 @@ impl<T: Send + 'static> TaskPool<T> {
         }
     }
 
+    fn from_semaphore(semaphore: Arc<Semaphore>) -> Self {
+        Self {
+            join_set: JoinSet::new(),
+            semaphore,
+        }
+    }
+
+    /// Creates a new [`TaskPool`] which shares its capacity with this one.
+    pub fn create_sibling(&self) -> Self {
+        Self::from_semaphore(self.semaphore.clone())
+    }
+
     /// A wrapper around [`JoinSet::spawn`] which acquires a permit from the internal semaphore.
     pub async fn spawn(&mut self, task: impl Future<Output = T> + Send + 'static) {
         let permit = self.semaphore.clone().acquire_owned().await.unwrap();
