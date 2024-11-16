@@ -18,6 +18,7 @@ impl<T: Send + 'static> TaskPool<T> {
         }
     }
 
+    /// A wrapper around [`JoinSet::spawn`] which acquires a permit from the internal semaphore.
     pub async fn spawn(&mut self, task: impl Future<Output = T> + Send + 'static) {
         let permit = self.semaphore.clone().acquire_owned().await.unwrap();
         self.join_set.spawn(async move {
@@ -27,6 +28,7 @@ impl<T: Send + 'static> TaskPool<T> {
         });
     }
 
+    /// See [`JoinSet::join_next`].
     pub async fn join_next(&mut self) -> Option<Result<T, JoinError>> {
         self.join_set.join_next().await
     }
