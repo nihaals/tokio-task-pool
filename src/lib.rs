@@ -24,7 +24,7 @@ impl<T: Send + 'static> TaskPool<T> {
     /// # use tokio_task_pool::TaskPool;
     /// # tokio_test::block_on(async {
     /// let mut task_pool: TaskPool<u8> = TaskPool::new(1);
-    /// let mut sibling: TaskPool<&'static str> = task_pool.create_sibling();
+    /// let mut sibling: TaskPool<&'static str> = task_pool.share_capacity();
     ///
     /// task_pool.spawn(async { 1 }).await;
     /// sibling.spawn(async { "2" }).await;
@@ -33,7 +33,7 @@ impl<T: Send + 'static> TaskPool<T> {
     /// assert_eq!(sibling.join_next().await.unwrap().unwrap(), "2");
     /// # })
     /// ```
-    pub fn create_sibling<U: Send + 'static>(&self) -> TaskPool<U> {
+    pub fn share_capacity<U: Send + 'static>(&self) -> TaskPool<U> {
         TaskPool::<U> {
             join_set: JoinSet::new(),
             semaphore: self.semaphore.clone(),
