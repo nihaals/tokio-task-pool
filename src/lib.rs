@@ -18,16 +18,26 @@ impl<T: Send + 'static> TaskPool<T> {
         }
     }
 
-    fn from_semaphore(semaphore: Arc<Semaphore>) -> Self {
-        Self {
-            join_set: JoinSet::new(),
-            semaphore,
-        }
-    }
-
     /// Creates a new [`TaskPool`] which shares its capacity with this one.
-    pub fn create_sibling(&self) -> Self {
-        Self::from_semaphore(self.semaphore.clone())
+    ///
+    /// ```
+    /// # use tokio_task_pool::TaskPool;
+    /// # tokio_test::block_on(async {
+    /// let mut task_pool: TaskPool<u8> = TaskPool::new(1);
+    /// let mut sibling: TaskPool<&'static str> = task_pool.create_sibling();
+    ///
+    /// task_pool.spawn(async { 1 }).await;
+    /// sibling.spawn(async { "2" }).await;
+    ///
+    /// assert_eq!(task_pool.join_next().await.unwrap().unwrap(), 1);
+    /// assert_eq!(sibling.join_next().await.unwrap().unwrap(), "2");
+    /// # })
+    /// ```
+    pub fn create_sibling<U: Send + 'static>(&self) -> TaskPool<U> {
+        TaskPool::<U> {
+            join_set: JoinSet::new(),
+            semaphore: self.semaphore.clone(),
+        }
     }
 
     /// A wrapper around [`JoinSet::spawn`] which acquires a permit from the internal semaphore.
